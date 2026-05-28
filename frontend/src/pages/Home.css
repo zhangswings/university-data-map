@@ -722,6 +722,43 @@
   margin-top: 8px;
 }
 
+.footer-link {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.footer-donate {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+}
+
+.donate-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-light);
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.donate-link:hover {
+  background: #dbeafe;
+  color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
 /* ─── Detail Drawer ─── */
 .detail-drawer .ant-drawer-body {
   padding: 0;

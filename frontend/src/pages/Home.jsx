@@ -752,11 +752,16 @@ const Home = () => {
         <div className="footer-inner">
           <span>中国高校信息查询系统</span>
           <span className="footer-divider">|</span>
-          <span>数据来源：教育部全国高等学校名单</span>
+          <span>数据来源：<a href="https://www.moe.gov.cn/" target="_blank" rel="noopener noreferrer" className="footer-link">教育部全国高等学校名单</a></span>
           <span className="footer-divider">|</span>
           <span>更新时间：2025 年</span>
         </div>
         <div className="footer-note">本系统仅供参考，实际信息以各高校官方发布为准</div>
+        <div className="footer-donate">
+          <a href="https://github.com/zhangswings/university-data-map#支持一下" target="_blank" rel="noopener noreferrer" className="donate-link">
+            ☕ 如果这个项目对你有帮助，欢迎请作者喝杯咖啡
+          </a>
+        </div>
       </footer>
 
       <Drawer
