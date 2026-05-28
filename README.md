@@ -68,6 +68,8 @@ npm run dev
 
 访问 http://localhost:5173 即可使用。
 
+> **在线预览** → `https://zhangswings.github.io/university-data-map/`
+
 ### 数据处理（可选）
 
 ```bash
