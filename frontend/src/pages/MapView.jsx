@@ -56,6 +56,51 @@ const getMarkerSize = (features) => {
   return 5;
 };
 
+const PROVINCE_CENTER = {
+  '北京市': [116.4, 39.9],
+  '天津市': [117.2, 39.1],
+  '河北省': [114.5, 38.0],
+  '山西省': [112.5, 37.9],
+  '内蒙古自治区': [111.7, 40.8],
+  '辽宁省': [123.4, 41.8],
+  '吉林省': [126.6, 43.9],
+  '黑龙江省': [126.6, 45.8],
+  '上海市': [121.5, 31.2],
+  '江苏省': [118.8, 32.1],
+  '浙江省': [120.2, 30.3],
+  '安徽省': [117.3, 31.8],
+  '福建省': [119.3, 26.1],
+  '江西省': [115.9, 28.7],
+  '山东省': [117.0, 36.7],
+  '河南省': [113.7, 34.8],
+  '湖北省': [114.3, 30.6],
+  '湖南省': [112.9, 28.2],
+  '广东省': [113.3, 23.1],
+  '广西壮族自治区': [108.3, 22.8],
+  '海南省': [110.3, 20.0],
+  '重庆市': [106.5, 29.6],
+  '四川省': [104.1, 30.6],
+  '贵州省': [106.7, 26.6],
+  '云南省': [102.7, 25.0],
+  '西藏自治区': [91.1, 29.7],
+  '陕西省': [108.9, 34.3],
+  '甘肃省': [103.8, 36.1],
+  '青海省': [101.8, 36.6],
+  '宁夏回族自治区': [106.3, 38.5],
+  '新疆维吾尔自治区': [87.6, 43.8],
+  '台湾省': [121.5, 25.0],
+  '香港特别行政区': [114.2, 22.3],
+  '澳门特别行政区': [113.5, 22.2],
+};
+
+const PROVINCE_ZOOM = {
+  '北京市': 7,
+  '天津市': 7,
+  '上海市': 7,
+  '香港特别行政区': 8,
+  '澳门特别行政区': 9,
+};
+
 const MapView = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
@@ -64,6 +109,7 @@ const MapView = () => {
   const [selectedFeature, setSelectedFeature] = useState('');
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [cardPos, setCardPos] = useState({ x: 0, y: 0 });
+  const [currentProvince, setCurrentProvince] = useState('');
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const chinaJsonRef = useRef(null);
@@ -98,6 +144,15 @@ const MapView = () => {
     }
     return result;
   }, [universities, searchText, selectedRegion, selectedLevel, selectedCategory, selectedFeature]);
+
+  const provinceData = useMemo(() => {
+    const map = {};
+    filteredData.forEach(u => {
+      const r = u.region || '未知';
+      map[r] = (map[r] || 0) + 1;
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
+  }, [filteredData]);
 
   const stats = useMemo(() => {
     const total = filteredData.length;
@@ -139,15 +194,29 @@ const MapView = () => {
     chartInstance.current.setOption({
       geo: {
         center: [school.lng, school.lat],
-        zoom: 8,
+        zoom: 6,
       },
     }, true);
     setSelectedSchool(school);
+    setCurrentProvince('');
+  }, []);
+
+  const flyToProvince = useCallback((provinceName) => {
+    if (!chartInstance.current) return;
+    const center = PROVINCE_CENTER[provinceName];
+    if (!center) return;
+    const zoom = PROVINCE_ZOOM[provinceName] || 5;
+    chartInstance.current.setOption({
+      geo: { center, zoom },
+    }, true);
+    setCurrentProvince(provinceName);
+    setSelectedSchool(null);
   }, []);
 
   useEffect(() => {
     if (!chartRef.current) return;
 
+    let disposed = false;
     const chart = echarts.init(chartRef.current, null, { renderer: 'canvas' });
     chartInstance.current = chart;
 
@@ -158,11 +227,41 @@ const MapView = () => {
         echarts.registerMap('china', chinaJsonRef.current);
       }
 
+      if (disposed) return;
+
+      const maxCount = Math.max(...provinceData.map(d => d.value), 1);
+
+      const getColorByCount = (count) => {
+        if (!count || count === 0) return '#e8eef6';
+        const ratio = count / maxCount;
+        const colors = ['#e0edff', '#bdd0ff', '#8bb3ff', '#5a96ff', '#3b82f6', '#2563eb', '#1d4ed8'];
+        const idx = Math.min(Math.floor(ratio * colors.length), colors.length - 1);
+        return colors[idx];
+      };
+
+      const regionColors = {};
+      provinceData.forEach(d => {
+        regionColors[d.name] = getColorByCount(d.value);
+      });
+
       const scatterData = filteredData.map(u => ({
         name: u.name,
         value: [u.lng, u.lat],
         school: u,
       }));
+
+      const chinaFeatures = chinaJsonRef.current.features || [];
+      const regions = chinaFeatures.map(f => {
+        const name = f.properties?.name;
+        return {
+          name,
+          itemStyle: {
+            areaColor: regionColors[name] || '#e8eef6',
+            borderColor: '#c8d4e4',
+            borderWidth: 0.6,
+          },
+        };
+      });
 
       chart.setOption({
         backgroundColor: 'transparent',
@@ -174,38 +273,78 @@ const MapView = () => {
           borderWidth: 1,
           padding: [10, 14],
           textStyle: { color: '#1a1a2e', fontSize: 13 },
-          extraCssText: 'border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-width: 220px;',
+          extraCssText: 'border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-width: 260px;',
           formatter: (params) => {
-            if (params.seriesType !== 'scatter') return '';
-            const s = params.data.school;
-            const tags = s.features ? s.features.split('，').slice(0, 3).map(f =>
-              `<span style="display:inline-block;padding:1px 6px;margin:0 2px;font-size:10px;border-radius:8px;background:${getMarkerColor(f)}18;color:${getMarkerColor(f)}">${f}</span>`
-            ).join('') : '';
-            return `<div>
-              <div style="font-weight:700;font-size:14px">${s.name}</div>
-              ${s.englishName ? `<div style="color:#94a3b8;font-size:11px;margin-top:2px">${s.englishName}</div>` : ''}
-              ${tags ? `<div style="margin-top:6px">${tags}</div>` : ''}
-              <div style="color:#64748b;font-size:11px;margin-top:4px">${s.region || ''}</div>
-            </div>`;
+            if (params.seriesType === 'scatter') {
+              const s = params.data.school;
+              const tags = s.features ? s.features.split('，').slice(0, 3).map(f =>
+                `<span style="display:inline-block;padding:1px 6px;margin:0 2px;font-size:10px;border-radius:8px;background:${getMarkerColor(f)}18;color:${getMarkerColor(f)}">${f}</span>`
+              ).join('') : '';
+              return `<div>
+                <div style="font-weight:700;font-size:14px">${s.name}</div>
+                ${s.englishName ? `<div style="color:#94a3b8;font-size:11px;margin-top:2px">${s.englishName}</div>` : ''}
+                ${tags ? `<div style="margin-top:6px">${tags}</div>` : ''}
+                <div style="color:#64748b;font-size:11px;margin-top:4px">${s.region || ''}</div>
+              </div>`;
+            }
+            if (params.componentType === 'geo' || params.seriesType === 'map') {
+              const provName = params.name;
+              const count = provinceData.find(d => d.name === provName)?.value || 0;
+              return `<div>
+                <div style="font-weight:700;font-size:15px">${provName}</div>
+                <div style="color:#3b82f6;font-size:20px;font-weight:700;margin-top:4px">${count}<span style="font-size:12px;color:#94a3b8;font-weight:400;margin-left:4px">所高校</span></div>
+                <div style="color:#94a3b8;font-size:11px;margin-top:6px">点击查看省份详情</div>
+              </div>`;
+            }
+            return '';
           },
+        },
+        visualMap: {
+          type: 'continuous',
+          min: 0,
+          max: maxCount,
+          left: 20,
+          bottom: 30,
+          text: ['多', '少'],
+          textStyle: { color: '#64748b', fontSize: 11 },
+          inRange: {
+            color: ['#e0edff', '#bdd0ff', '#8bb3ff', '#5a96ff', '#3b82f6', '#2563eb', '#1d4ed8'],
+          },
+          calculable: false,
+          show: true,
+          itemWidth: 12,
+          itemHeight: 100,
+          seriesIndex: 0,
         },
         geo: {
           map: 'china',
           roam: true,
           zoom: 1.2,
           center: [104, 36],
-          scaleLimit: { min: 1, max: 12 },
-          itemStyle: {
-            areaColor: '#f0f4f8',
-            borderColor: '#cbd5e1',
-            borderWidth: 0.6,
-          },
+          scaleLimit: { min: 0.8, max: 10 },
+          regions,
           emphasis: {
-            disabled: true,
+            itemStyle: {
+              areaColor: '#bdd0ff',
+              borderColor: '#3b82f6',
+              borderWidth: 1.5,
+            },
+            label: {
+              show: true,
+              color: '#1a1a2e',
+              fontSize: 12,
+              fontWeight: 600,
+            },
           },
           label: { show: false },
         },
         series: [
+          {
+            type: 'map',
+            map: 'china',
+            geoIndex: 0,
+            data: provinceData,
+          },
           {
             type: 'scatter',
             coordinateSystem: 'geo',
@@ -248,6 +387,12 @@ const MapView = () => {
         }
       });
 
+      chart.on('click', 'geo', (params) => {
+        if (params.name) {
+          flyToProvince(params.name);
+        }
+      });
+
       chart.getZr().on('click', (e) => {
         if (!e.target) {
           setSelectedSchool(null);
@@ -261,11 +406,12 @@ const MapView = () => {
     window.addEventListener('resize', handleResize);
 
     return () => {
+      disposed = true;
       window.removeEventListener('resize', handleResize);
       chart.dispose();
       chartInstance.current = null;
     };
-  }, [filteredData]);
+  }, [filteredData, provinceData, flyToProvince]);
 
   const searchOptions = useMemo(() => {
     if (!searchText || searchText.length < 1) return [];
@@ -283,6 +429,21 @@ const MapView = () => {
         ),
       }));
   }, [universities, searchText]);
+
+  const resetToNational = () => {
+    setSearchText('');
+    setSelectedRegion('');
+    setSelectedLevel('');
+    setSelectedCategory('');
+    setSelectedFeature('');
+    setSelectedSchool(null);
+    setCurrentProvince('');
+    if (chartInstance.current) {
+      chartInstance.current.setOption({
+        geo: { center: [104, 36], zoom: 1.2 },
+      }, true);
+    }
+  };
 
   const clearAll = () => {
     setSearchText('');
@@ -325,10 +486,28 @@ const MapView = () => {
             </AutoComplete>
           </div>
           <div className="map-nav-actions">
+            {currentProvince && (
+              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); if (chartInstance.current) chartInstance.current.setOption({ geo: { center: [104, 36], zoom: 1.2 } }, true); }}>
+                ← 返回全国
+              </button>
+            )}
+            <button className="map-nav-btn" onClick={resetToNational}>
+              <GlobalOutlined /> 全国视图
+            </button>
             <a href={`${import.meta.env.BASE_URL}`} className="map-nav-link">列表视图</a>
           </div>
         </div>
       </nav>
+
+      {currentProvince && (
+        <div className="map-province-bar">
+          <EnvironmentOutlined style={{ color: '#3b82f6' }} />
+          <span className="map-province-name">{currentProvince}</span>
+          <span className="map-province-count">
+            {provinceData.find(d => d.name === currentProvince)?.value || 0} 所高校
+          </span>
+        </div>
+      )}
 
       <div className="map-body">
         <aside className="map-panel-left">
@@ -432,7 +611,7 @@ const MapView = () => {
             </div>
 
             <div className="map-legend">
-              <div className="map-legend-title">图例</div>
+              <div className="map-legend-title">学校特色图例</div>
               {Object.entries(LEVEL_COLORS).filter(([k]) => k !== 'default').map(([key, color]) => (
                 <div key={key} className="map-legend-item">
                   <span className="map-legend-dot" style={{ background: color }} />
@@ -522,9 +701,12 @@ const MapView = () => {
                 <div
                   key={region}
                   className="map-rank-item"
-                  onClick={() => setSelectedRegion(
-                    Object.keys(REGION_GROUPS).find(g => REGION_GROUPS[g].includes(region)) || region
-                  )}
+                  onClick={() => {
+                    setSelectedRegion(
+                      Object.keys(REGION_GROUPS).find(g => REGION_GROUPS[g].includes(region)) || region
+                    );
+                    flyToProvince(region);
+                  }}
                 >
                   <span className={`map-rank-num ${idx < 3 ? 'top' : ''}`}>{idx + 1}</span>
                   <span className="map-rank-name">{region}</span>
@@ -564,6 +746,36 @@ const MapView = () => {
           </div>
         </aside>
       </div>
+
+      <footer className="map-footer">
+        <div className="footer-inner">
+          <span>中国高校信息查询系统</span>
+          <span className="footer-divider">|</span>
+          <span>数据来源：<a href="https://www.moe.gov.cn/" target="_blank" rel="noopener noreferrer" className="footer-link">教育部全国高等学校名单</a></span>
+          <span className="footer-divider">|</span>
+          <span>更新时间：2025 年</span>
+        </div>
+        <div className="footer-note">本系统仅供参考，实际信息以各高校官方发布为准</div>
+        <div className="footer-donate">
+          <div className="donate-wrapper">
+            <span className="donate-link">
+              ☕ 如果这个项目对你有帮助，欢迎请作者喝杯咖啡
+            </span>
+            <div className="donate-qrcode">
+              <img src={`${import.meta.env.BASE_URL}wechat-pay.jpg`} alt="微信赞赏码" />
+              <div className="donate-qrcode-tip">微信扫一扫</div>
+            </div>
+          </div>
+        </div>
+        <div className="footer-github">
+          <a href="https://github.com/zhangswings/university-data-map" target="_blank" rel="noopener noreferrer" className="github-link">
+            <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" style={{ marginRight: 6 }}>
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            GitHub
+          </a>
+        </div>
+      </footer>
     </div>
   );
 };
