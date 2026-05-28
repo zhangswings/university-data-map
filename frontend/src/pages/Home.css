@@ -739,6 +739,11 @@
   border-top: 1px dashed var(--border);
 }
 
+.donate-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .donate-link {
   display: inline-flex;
   align-items: center;
@@ -748,15 +753,69 @@
   color: var(--accent);
   background: var(--accent-light);
   border-radius: 20px;
-  text-decoration: none;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.donate-link:hover {
+.donate-wrapper:hover .donate-link {
   background: #dbeafe;
   color: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.donate-qrcode {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.donate-qrcode img {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border: 3px solid #fff;
+}
+
+.donate-qrcode-tip {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.donate-wrapper:hover .donate-qrcode {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+}
+
+.footer-github {
+  margin-top: 12px;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.github-link:hover {
+  color: var(--text-primary);
+  background: var(--border-light);
 }
 
 /* ─── Detail Drawer ─── */
