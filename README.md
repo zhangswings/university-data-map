@@ -117,6 +117,18 @@ university-data-map/
 
 所有数据来自**中华人民共和国教育部官网**，覆盖 2017–2025 年全国普通高等学校名单与成人高等学校名单，包含学校名称、标识码、主管部门、所在地、办学层次等字段。
 
+## 支持一下
+
+如果这个项目对你有帮助，欢迎请作者喝杯咖啡 ☕
+
+<p align="center">
+  <img src="screenshots/wechat-pay.jpg" width="240" alt="微信赞赏码" />
+</p>
+
+<p align="center">
+  <sub>微信扫一扫 · 谢谢你的支持 ❤️</sub>
+</p>
+
 ## 许可证
 
 MIT License
