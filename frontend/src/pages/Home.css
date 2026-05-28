@@ -70,6 +70,19 @@
 .nav-meta {
   font-size: 13px;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.nav-map-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-map-link:hover {
+  color: #2563eb;
 }
 
 /* ─── Hero Section ─── */

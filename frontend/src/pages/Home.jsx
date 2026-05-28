@@ -544,7 +544,11 @@ const Home = () => {
             <BankOutlined className="nav-icon" />
             <span className="nav-title">高校数据平台</span>
           </div>
-          <div className="nav-meta">数据来源：教育部 2025</div>
+          <div className="nav-meta">
+            <a href={`${import.meta.env.BASE_URL}map`} className="nav-map-link">地图视图</a>
+            <span style={{ color: '#cbd5e1', margin: '0 8px' }}>|</span>
+            <span>数据来源：教育部 2025</span>
+          </div>
         </div>
       </nav>
 
