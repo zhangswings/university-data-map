@@ -191,12 +191,16 @@ const MapView = () => {
 
   const flyToSchool = useCallback((school) => {
     if (!chartInstance.current || !school.lng) return;
-    chartInstance.current.setOption({
-      geo: {
-        center: [school.lng, school.lat],
-        zoom: 6,
-      },
-    }, true);
+    setTimeout(() => {
+      if (chartInstance.current) {
+        chartInstance.current.setOption({
+          geo: {
+            center: [school.lng, school.lat],
+            zoom: 6,
+          },
+        }, true);
+      }
+    }, 0);
     setSelectedSchool(school);
     setCurrentProvince('');
   }, []);
@@ -206,9 +210,13 @@ const MapView = () => {
     const center = PROVINCE_CENTER[provinceName];
     if (!center) return;
     const zoom = PROVINCE_ZOOM[provinceName] || 5;
-    chartInstance.current.setOption({
-      geo: { center, zoom },
-    }, true);
+    setTimeout(() => {
+      if (chartInstance.current) {
+        chartInstance.current.setOption({
+          geo: { center, zoom },
+        }, true);
+      }
+    }, 0);
     setCurrentProvince(provinceName);
     setSelectedSchool(null);
   }, []);
@@ -438,11 +446,13 @@ const MapView = () => {
     setSelectedFeature('');
     setSelectedSchool(null);
     setCurrentProvince('');
-    if (chartInstance.current) {
-      chartInstance.current.setOption({
-        geo: { center: [104, 36], zoom: 1.2 },
-      }, true);
-    }
+    setTimeout(() => {
+      if (chartInstance.current) {
+        chartInstance.current.setOption({
+          geo: { center: [104, 36], zoom: 1.2 },
+        }, true);
+      }
+    }, 0);
   };
 
   const clearAll = () => {
@@ -487,7 +497,7 @@ const MapView = () => {
           </div>
           <div className="map-nav-actions">
             {currentProvince && (
-              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); if (chartInstance.current) chartInstance.current.setOption({ geo: { center: [104, 36], zoom: 1.2 } }, true); }}>
+              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); setTimeout(() => { if (chartInstance.current) chartInstance.current.setOption({ geo: { center: [104, 36], zoom: 1.2 } }, true); }, 0); }}>
                 ← 返回全国
               </button>
             )}
