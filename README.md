@@ -2,6 +2,22 @@
 
 基于教育部官方数据的现代化高校信息查询平台，提供多维度筛选、智能搜索、卡片/列表双视图等功能。
 
+<p align="center">
+  <img src="screenshots/hero.png" width="90%" alt="首页概览" />
+</p>
+
+<p align="center">
+  <img src="screenshots/search.png" width="45%" alt="智能搜索" />
+  &nbsp;&nbsp;
+  <img src="screenshots/filters.png" width="45%" alt="多维筛选" />
+</p>
+
+<p align="center">
+  <img src="screenshots/card-view.png" width="45%" alt="卡片视图" />
+  &nbsp;&nbsp;
+  <img src="screenshots/detail-drawer.png" width="45%" alt="详情抽屉" />
+</p>
+
 ## 功能特性
 
 - **智能搜索** — 支持中英文校名、城市、标签关键词搜索，实时联想
