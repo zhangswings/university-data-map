@@ -9,6 +9,9 @@ import {
   BarChartOutlined,
   FireOutlined,
   StarOutlined,
+  LinkOutlined,
+  GlobalOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import * as echarts from 'echarts';
 import universityData from '../data/universities.json';
@@ -45,12 +48,12 @@ const getMarkerColor = (features) => {
 };
 
 const getMarkerSize = (features) => {
-  if (!features) return 6;
-  if (features.includes('985')) return 14;
-  if (features.includes('211')) return 11;
-  if (features.includes('双一流')) return 10;
-  if (features.includes('教育部直属')) return 9;
-  return 6;
+  if (!features) return 5;
+  if (features.includes('985')) return 12;
+  if (features.includes('211')) return 10;
+  if (features.includes('双一流')) return 9;
+  if (features.includes('教育部直属')) return 8;
+  return 5;
 };
 
 const MapView = () => {
@@ -59,11 +62,11 @@ const MapView = () => {
   const [selectedLevel, setSelectedLevel] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedFeature, setSelectedFeature] = useState('');
-  const [hoveredSchool, setHoveredSchool] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [selectedSchool, setSelectedSchool] = useState(null);
+  const [cardPos, setCardPos] = useState({ x: 0, y: 0 });
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
-  const mapContainerRef = useRef(null);
+  const chinaJsonRef = useRef(null);
   const screens = useBreakpoint();
 
   const { categories, universities } = universityData;
@@ -139,123 +142,120 @@ const MapView = () => {
         zoom: 8,
       },
     }, true);
+    setSelectedSchool(school);
   }, []);
 
   useEffect(() => {
     if (!chartRef.current) return;
 
-    const chart = echarts.init(chartRef.current);
+    const chart = echarts.init(chartRef.current, null, { renderer: 'canvas' });
     chartInstance.current = chart;
 
-    fetch(`${import.meta.env.BASE_URL}china.json`)
-      .then(r => r.json())
-      .then(chinaJson => {
-        echarts.registerMap('china', chinaJson);
+    const loadMap = async () => {
+      if (!chinaJsonRef.current) {
+        const resp = await fetch(`${import.meta.env.BASE_URL}china.json`);
+        chinaJsonRef.current = await resp.json();
+        echarts.registerMap('china', chinaJsonRef.current);
+      }
 
-        const scatterData = filteredData.map(u => ({
-          name: u.name,
-          value: [u.lng, u.lat, 1],
-          school: u,
-        }));
+      const scatterData = filteredData.map(u => ({
+        name: u.name,
+        value: [u.lng, u.lat],
+        school: u,
+      }));
 
-        const option = {
-          backgroundColor: 'transparent',
-          tooltip: {
-            trigger: 'item',
-            backgroundColor: 'rgba(255,255,255,0.96)',
-            borderColor: '#e2e8f0',
-            borderWidth: 1,
-            padding: [12, 16],
-            textStyle: { color: '#1a1a2e', fontSize: 13 },
-            extraCssText: 'border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);',
-            formatter: (params) => {
-              if (params.seriesType === 'scatter') {
-                const s = params.data.school;
-                const tags = s.features ? s.features.split('，').map(f =>
-                  `<span style="display:inline-block;padding:1px 6px;margin:0 2px;font-size:11px;border-radius:8px;background:${getMarkerColor(f)}20;color:${getMarkerColor(f)}">${f}</span>`
-                ).join('') : '';
-                return `<div style="min-width:180px">
-                  <div style="font-weight:700;font-size:15px;margin-bottom:4px">${s.name}</div>
-                  ${s.englishName ? `<div style="color:#94a3b8;font-size:12px;margin-bottom:6px">${s.englishName}</div>` : ''}
-                  ${tags ? `<div style="margin-bottom:6px">${tags}</div>` : ''}
-                  <div style="color:#64748b;font-size:12px"><i class="anticon anticon-environment" style="margin-right:4px"></i>${s.region || s.location || ''}</div>
-                </div>`;
-              }
-              if (params.seriesType === 'map') {
-                const name = params.name;
-                const count = filteredData.filter(u => u.region === name).length;
-                return `<div style="font-weight:600">${name}</div><div style="color:#64748b;font-size:12px;margin-top:4px">共 ${count} 所高校</div>`;
-              }
-              return '';
-            },
+      chart.setOption({
+        backgroundColor: 'transparent',
+        animation: false,
+        tooltip: {
+          trigger: 'item',
+          backgroundColor: 'rgba(255,255,255,0.96)',
+          borderColor: '#e2e8f0',
+          borderWidth: 1,
+          padding: [10, 14],
+          textStyle: { color: '#1a1a2e', fontSize: 13 },
+          extraCssText: 'border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-width: 220px;',
+          formatter: (params) => {
+            if (params.seriesType !== 'scatter') return '';
+            const s = params.data.school;
+            const tags = s.features ? s.features.split('，').slice(0, 3).map(f =>
+              `<span style="display:inline-block;padding:1px 6px;margin:0 2px;font-size:10px;border-radius:8px;background:${getMarkerColor(f)}18;color:${getMarkerColor(f)}">${f}</span>`
+            ).join('') : '';
+            return `<div>
+              <div style="font-weight:700;font-size:14px">${s.name}</div>
+              ${s.englishName ? `<div style="color:#94a3b8;font-size:11px;margin-top:2px">${s.englishName}</div>` : ''}
+              ${tags ? `<div style="margin-top:6px">${tags}</div>` : ''}
+              <div style="color:#64748b;font-size:11px;margin-top:4px">${s.region || ''}</div>
+            </div>`;
           },
-          geo: {
-            map: 'china',
-            roam: true,
-            zoom: 1.2,
-            center: [104, 36],
-            scaleLimit: { min: 1, max: 12 },
+        },
+        geo: {
+          map: 'china',
+          roam: true,
+          zoom: 1.2,
+          center: [104, 36],
+          scaleLimit: { min: 1, max: 12 },
+          itemStyle: {
+            areaColor: '#f0f4f8',
+            borderColor: '#cbd5e1',
+            borderWidth: 0.6,
+          },
+          emphasis: {
+            disabled: true,
+          },
+          label: { show: false },
+        },
+        series: [
+          {
+            type: 'scatter',
+            coordinateSystem: 'geo',
+            data: scatterData,
+            symbol: 'circle',
+            large: true,
+            largeThreshold: 500,
+            symbolSize: (val) => {
+              const u = val[2] && val[2].school ? val[2].school : null;
+              if (!u) return 5;
+              return getMarkerSize(u.features);
+            },
             itemStyle: {
-              areaColor: '#f0f4f8',
-              borderColor: '#cbd5e1',
-              borderWidth: 0.8,
+              color: (params) => getMarkerColor(params.data.school?.features),
             },
             emphasis: {
+              disabled: false,
               itemStyle: {
-                areaColor: '#dbeafe',
-                borderColor: '#3b82f6',
-                borderWidth: 1.5,
+                shadowBlur: 0,
               },
-              label: {
-                show: true,
-                color: '#1a1a2e',
-                fontSize: 12,
-                fontWeight: 600,
-              },
+              scale: 1.5,
             },
-            select: {
-              itemStyle: { areaColor: '#dbeafe' },
-              label: { show: true, color: '#1a1a2e' },
-            },
-            label: { show: false },
-            regions: [],
+            zlevel: 1,
           },
-          series: [
-            {
-              type: 'scatter',
-              coordinateSystem: 'geo',
-              data: scatterData,
-              symbol: 'circle',
-              symbolSize: (val) => {
-                const u = val[2] && val[2].school ? val[2].school : null;
-                if (!u) return 6;
-                return getMarkerSize(u.features);
-              },
-              itemStyle: {
-                color: (params) => getMarkerColor(params.data.school?.features),
-                shadowBlur: 8,
-                shadowColor: 'rgba(59,130,246,0.3)',
-              },
-              emphasis: {
-                itemStyle: {
-                  shadowBlur: 16,
-                  shadowColor: 'rgba(59,130,246,0.5)',
-                },
-                scale: 1.8,
-              },
-              zlevel: 2,
-            },
-          ],
-        };
+        ],
+      }, true);
 
-        chart.setOption(option);
-
-        chart.on('click', 'series.scatter', (params) => {
-          if (params.data?.school) {
-            flyToSchool(params.data.school);
+      chart.on('click', 'series.scatter', (params) => {
+        if (params.data?.school) {
+          const school = params.data.school;
+          setSelectedSchool(school);
+          const pixel = chart.convertToPixel('geo', [school.lng, school.lat]);
+          if (pixel) {
+            const rect = chartRef.current.getBoundingClientRect();
+            setCardPos({
+              x: Math.min(pixel[0], rect.width - 300),
+              y: Math.min(pixel[1], rect.height - 260),
+            });
           }
-        });
+        }
       });
+
+      chart.getZr().on('click', (e) => {
+        if (!e.target) {
+          setSelectedSchool(null);
+        }
+      });
+    };
+
+    loadMap();
 
     const handleResize = () => chart.resize();
     window.addEventListener('resize', handleResize);
@@ -265,7 +265,7 @@ const MapView = () => {
       chart.dispose();
       chartInstance.current = null;
     };
-  }, [filteredData, flyToSchool]);
+  }, [filteredData]);
 
   const searchOptions = useMemo(() => {
     if (!searchText || searchText.length < 1) return [];
@@ -293,6 +293,11 @@ const MapView = () => {
   };
 
   const hasFilters = searchText || selectedRegion || selectedLevel || selectedCategory || selectedFeature;
+
+  const getFeatureTags = (features) => {
+    if (!features) return [];
+    return features.split('，').map(f => f.trim()).filter(Boolean);
+  };
 
   return (
     <div className="map-root">
@@ -442,21 +447,67 @@ const MapView = () => {
           </div>
         </aside>
 
-        <main className="map-main" ref={mapContainerRef}>
+        <main className="map-main">
           <div className="map-chart-container" ref={chartRef} />
 
-          {hoveredSchool && (
+          {selectedSchool && (
             <div
-              className="map-hover-tooltip"
-              style={{ left: tooltipPos.x + 16, top: tooltipPos.y - 10 }}
+              className="map-school-card"
+              style={{ left: cardPos.x, top: cardPos.y }}
             >
-              <div className="map-hover-name">{hoveredSchool.name}</div>
-              {hoveredSchool.englishName && (
-                <div className="map-hover-english">{hoveredSchool.englishName}</div>
-              )}
-              <div className="map-hover-meta">
-                <EnvironmentOutlined /> {hoveredSchool.region}
+              <button className="map-card-close" onClick={() => setSelectedSchool(null)}>
+                <CloseOutlined />
+              </button>
+              <div className="map-card-header">
+                <div className="map-card-name">{selectedSchool.name}</div>
+                {selectedSchool.englishName && (
+                  <div className="map-card-english">{selectedSchool.englishName}</div>
+                )}
               </div>
+              <div className="map-card-tags">
+                {selectedSchool.category && (
+                  <span className="map-card-tag" style={{ background: '#eff6ff', color: '#3b82f6' }}>
+                    {selectedSchool.category}
+                  </span>
+                )}
+                {selectedSchool.level && (
+                  <span className="map-card-tag" style={{
+                    background: selectedSchool.level === '本科' ? '#f0fdf4' : '#fff7ed',
+                    color: selectedSchool.level === '本科' ? '#16a34a' : '#ea580c',
+                  }}>
+                    {selectedSchool.level}
+                  </span>
+                )}
+                {getFeatureTags(selectedSchool.features).slice(0, 3).map((tag, i) => (
+                  <span
+                    key={i}
+                    className="map-card-tag"
+                    style={{ background: `${getMarkerColor(tag)}15`, color: getMarkerColor(tag) }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="map-card-info">
+                <div className="map-card-info-row">
+                  <EnvironmentOutlined />
+                  <span>{selectedSchool.region || selectedSchool.location || '-'}</span>
+                </div>
+                <div className="map-card-info-row">
+                  <BankOutlined />
+                  <span>{selectedSchool.department || '-'}</span>
+                </div>
+              </div>
+              {selectedSchool.website && (
+                <a
+                  href={selectedSchool.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="map-card-link"
+                >
+                  <GlobalOutlined /> 访问官网 <LinkOutlined style={{ marginLeft: 'auto', fontSize: 11 }} />
+                </a>
+              )}
             </div>
           )}
         </main>
@@ -493,11 +544,6 @@ const MapView = () => {
                   key={school.code}
                   className="map-hot-item"
                   onClick={() => flyToSchool(school)}
-                  onMouseEnter={(e) => {
-                    setHoveredSchool(school);
-                    setTooltipPos({ x: e.clientX, y: e.clientY });
-                  }}
-                  onMouseLeave={() => setHoveredSchool(null)}
                 >
                   <div className="map-hot-name">{school.name}</div>
                   <div className="map-hot-meta">
