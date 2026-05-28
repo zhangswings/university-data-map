@@ -41,7 +41,6 @@ htmlcov/
 # ─── Data Files (large, download separately) ───
 university_data/raw_data/
 university_data/processed_data/
-frontend/src/data/universities.json
 
 # ─── IDE ───
 .vscode/
