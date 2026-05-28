@@ -2,6 +2,8 @@
 
 基于教育部官方数据的现代化高校信息查询平台，提供多维度筛选、智能搜索、卡片/列表双视图等功能。
 
+> **在线预览** → https://zhangswings.github.io/university-data-map/
+
 <p align="center">
   <img src="screenshots/hero.png" width="90%" alt="首页概览" />
 </p>
