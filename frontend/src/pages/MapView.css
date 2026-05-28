@@ -370,6 +370,127 @@
   gap: 4px;
 }
 
+/* ─── School Info Card (click popup) ─── */
+.map-school-card {
+  position: absolute;
+  z-index: 200;
+  width: 272px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  animation: cardFadeIn 0.2s ease-out;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.map-card-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+
+.map-card-close:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.map-card-header {
+  margin-bottom: 10px;
+  padding-right: 24px;
+}
+
+.map-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.3px;
+}
+
+.map-card-english {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.map-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.map-card-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 11px;
+  white-space: nowrap;
+}
+
+.map-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.map-card-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.map-card-info-row .anticon {
+  color: #94a3b8;
+  font-size: 12px;
+  width: 14px;
+  text-align: center;
+}
+
+.map-card-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #3b82f6;
+  background: #eff6ff;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.map-card-link:hover {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
 /* ─── Search Option ─── */
 .map-search-option {
   display: flex;
