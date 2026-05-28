@@ -15,9 +15,16 @@ RAW_DATA_DIR = "raw_data"
 OUTPUT_DIR = "processed_data"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+def _get_excel_engine(filepath):
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext == '.xlsx':
+        return 'openpyxl'
+    return 'xlrd'
+
 def read_xls_file(filepath):
+    engine = _get_excel_engine(filepath)
     try:
-        df_raw = pd.read_excel(filepath, engine='xlrd', header=None)
+        df_raw = pd.read_excel(filepath, engine=engine, header=None)
         
         header_row = None
         for i, row in df_raw.iterrows():
@@ -30,11 +37,14 @@ def read_xls_file(filepath):
             print(f"  警告: 未找到表头行，尝试使用第一行作为表头")
             header_row = 0
         
-        df = pd.read_excel(filepath, engine='xlrd', header=header_row)
+        df = pd.read_excel(filepath, engine=engine, header=header_row)
         
         df = df.dropna(how='all')
         
         return df
+    except ImportError:
+        print(f"  读取失败: 缺少引擎 '{engine}'，请运行 pip install {engine}")
+        return None
     except Exception as e:
         print(f"  读取失败: {e}")
         return None
@@ -93,7 +103,7 @@ def clean_data(df, year, school_type):
         df['办学层次'] = df['办学层次'].str.replace('\n', ' ').str.replace('\r', ' ')
         df['办学层次'] = df['办学层次'].replace('', '未知')
     else:
-        df['办学层次'] = '成人高等教育'
+        df['办学层次'] = school_type
     
     province_mapping = {
         '北京': '北京市', '天津': '天津市', '河北': '河北省', '山西': '山西省',

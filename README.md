@@ -1,84 +1,105 @@
-# University Data Map
+# 中国高校信息查询系统
 
-大学数据地图项目
-
-## 项目简介
-
-这是一个用于展示和分析大学数据的可视化地图项目。
+基于教育部官方数据的现代化高校信息查询平台，提供多维度筛选、智能搜索、卡片/列表双视图等功能。
 
 ## 功能特性
 
-- 数据可视化展示
-- 地理位置映射
-- 交互式数据探索
-- 多维度数据分析
+- **智能搜索** — 支持中英文校名、城市、标签关键词搜索，实时联想
+- **多维筛选** — 院校类型 / 所属地区 / 办学层次 / 办学类型 / 院校特色（985、211、双一流等）
+- **双视图** — 列表视图与卡片视图一键切换
+- **详情抽屉** — 点击高校弹出侧栏详情，无需跳转页面
+- **标签体系** — 统一胶囊风格标签，颜色语义化
+- **响应式** — 桌面端 / 平板 / 移动端自适应
+
+## 数据维度
+
+| 维度 | 说明 | 示例 |
+|------|------|------|
+| 高校类型 | 学科类型 | 综合、理工、农林、医药、师范等 |
+| 院校所属 | 所在地区 | 北京市、上海市、广东省等 |
+| 办学层次 | 层次分类 | 本科、高职（专科） |
+| 办学类型 | 院校性质 | 公办、民办、中外合作办学等 |
+| 院校特色 | 特色标签 | 985、211、双一流、教育部直属、强基计划等 |
 
 ## 技术栈
 
-- 前端框架：待定
-- 数据可视化：待定
-- 地图服务：待定
+| 层级 | 技术 |
+|------|------|
+| 前端框架 | React 19 |
+| UI 组件 | Ant Design 6 |
+| 构建工具 | Vite 8 |
+| 数据处理 | Python 3 + Pandas |
+| 数据来源 | 教育部《全国高等学校名单》2017–2025 |
 
 ## 快速开始
 
 ### 环境要求
 
-- Node.js >= 14.0.0
-- npm >= 6.0.0
+- Node.js >= 18
+- npm >= 8
+- Python 3.8+（用于数据处理）
 
-### 安装
+### 安装与运行
 
 ```bash
-# 克隆项目
-git clone https://github.com/your-username/university-data-map.git
-
-# 进入项目目录
-cd university-data-map
-
-# 安装依赖
+git clone https://github.com/zhangswings/university-data-map.git
+cd university-data-map/frontend
 npm install
-```
-
-### 开发
-
-```bash
-# 启动开发服务器
 npm run dev
 ```
 
-### 构建
+访问 http://localhost:5173 即可使用。
+
+### 数据处理（可选）
 
 ```bash
-# 构建生产版本
-npm run build
+# 下载原始数据
+chmod +x download_data.sh && ./download_data.sh
+
+# 清洗并生成 CSV
+source venv/bin/activate
+python3 process_data.py
+
+# 生成前端 JSON
+cd frontend/src/data
+python3 generate_data.py
 ```
 
 ## 项目结构
 
 ```
 university-data-map/
-├── src/            # 源代码目录
-├── public/         # 静态资源目录
-├── .gitignore      # Git忽略文件
-└── README.md       # 项目说明文件
+├── frontend/                        # 前端项目
+│   └── src/
+│       ├── pages/
+│       │   ├── Home.jsx             # 主页（搜索 + 筛选 + 结果 + 详情抽屉）
+│       │   └── Home.css             # 全局样式（CSS 变量 + 响应式）
+│       ├── data/
+│       │   ├── generate_data.py     # 数据生成脚本
+│       │   └── universities.json    # 生成的 JSON（已 gitignore）
+│       ├── App.jsx
+│       └── main.jsx
+├── university_data/                 # 数据目录
+│   ├── university-info.md           # 数据源说明
+│   ├── raw_data/                    # 原始 XLS / TSV（已 gitignore）
+│   └── processed_data/              # 清洗后 CSV（已 gitignore）
+├── process_data.py                  # 数据清洗脚本
+├── download_data.sh                 # 数据下载脚本
+├── .gitignore
+└── README.md
 ```
 
-## 开发指南
+## 使用说明
 
-### 代码规范
+1. **搜索** — 在 Hero 区域输入校名、英文名、城市或标签
+2. **筛选** — 一级筛选（院校类型、地区、层次、类型）+ 二级折叠筛选（院校特色）
+3. **切换视图** — 结果区域右上角可切换列表 / 卡片视图
+4. **查看详情** — 点击任意高校行或卡片，弹出右侧详情抽屉
+5. **清除筛选** — 点击已选条件标签的关闭按钮，或「清除全部」
 
-- 使用ESLint进行代码检查
-- 使用Prettier进行代码格式化
+## 数据来源
 
-### 提交规范
-
-- feat: 新功能
-- fix: 修复bug
-- docs: 文档更新
-- style: 代码格式（不影响代码运行的变动）
-- refactor: 重构（既不是新增功能，也不是修改bug的代码变动）
-- test: 增加测试
-- chore: 构建过程或辅助工具的变动
+所有数据来自**中华人民共和国教育部官网**，覆盖 2017–2025 年全国普通高等学校名单与成人高等学校名单，包含学校名称、标识码、主管部门、所在地、办学层次等字段。
 
 ## 许可证
 
@@ -86,5 +107,5 @@ MIT License
 
 ## 联系方式
 
-- 项目地址：https://github.com/your-username/university-data-map
-- 问题反馈：https://github.com/your-username/university-data-map/issues
+- 项目地址：https://github.com/zhangswings/university-data-map
+- 问题反馈：https://github.com/zhangswings/university-data-map/issues

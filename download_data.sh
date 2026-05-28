@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if ! command -v curl &> /dev/null; then
+    echo "错误: curl 未安装，请先安装 curl"
+    exit 1
+fi
+
 # 创建数据目录
 mkdir -p raw_data
 

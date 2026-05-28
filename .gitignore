@@ -1,77 +1,21 @@
-# Dependencies
+# ─── Dependencies ───
 node_modules/
 .pnp
 .pnp.js
 
-# Testing
-coverage/
-
-# Production
+# ─── Build Output ───
 build/
 dist/
+dist-ssr/
 
-# Environment variables
+# ─── Environment Variables ───
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Debug logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-.env
-.venv
-env/
-venv/
-ENV/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Logs
+# ─── Logs ───
 logs/
 *.log
 npm-debug.log*
@@ -79,27 +23,41 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+*.egg-info/
+*.egg
+MANIFEST
 .pytest_cache/
+.coverage
+htmlcov/
 
-# Transpilation
-turbo.env
+# ─── Data Files (large, download separately) ───
+university_data/raw_data/
+university_data/processed_data/
+frontend/src/data/universities.json
 
-# Local settings
-*.local
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sln
+*.suo
+*.ntvs*
+*.njsproj
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── Temporary ───
+*.tmp
+*.temp
+*.bak
