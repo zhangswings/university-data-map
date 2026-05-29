@@ -200,26 +200,27 @@ const MapView = () => {
           },
         }, true);
       }
-    }, 0);
+    }, 50);
     setSelectedSchool(school);
     setCurrentProvince('');
   }, []);
 
-  const flyToProvince = useCallback((provinceName) => {
+  const flyToProvinceRef = useRef(null);
+  flyToProvinceRef.current = (provinceName) => {
     if (!chartInstance.current) return;
     const center = PROVINCE_CENTER[provinceName];
     if (!center) return;
     const zoom = PROVINCE_ZOOM[provinceName] || 5;
+    setCurrentProvince(provinceName);
+    setSelectedSchool(null);
     setTimeout(() => {
       if (chartInstance.current) {
         chartInstance.current.setOption({
           geo: { center, zoom },
         }, true);
       }
-    }, 0);
-    setCurrentProvince(provinceName);
-    setSelectedSchool(null);
-  }, []);
+    }, 50);
+  };
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -397,7 +398,7 @@ const MapView = () => {
 
       chart.on('click', 'geo', (params) => {
         if (params.name) {
-          flyToProvince(params.name);
+          flyToProvinceRef.current(params.name);
         }
       });
 
@@ -419,7 +420,7 @@ const MapView = () => {
       chart.dispose();
       chartInstance.current = null;
     };
-  }, [filteredData, provinceData, flyToProvince]);
+  }, [filteredData, provinceData]);
 
   const searchOptions = useMemo(() => {
     if (!searchText || searchText.length < 1) return [];
@@ -452,7 +453,7 @@ const MapView = () => {
           geo: { center: [104, 36], zoom: 1.2 },
         }, true);
       }
-    }, 0);
+    }, 50);
   };
 
   const clearAll = () => {
@@ -497,7 +498,7 @@ const MapView = () => {
           </div>
           <div className="map-nav-actions">
             {currentProvince && (
-              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); setTimeout(() => { if (chartInstance.current) chartInstance.current.setOption({ geo: { center: [104, 36], zoom: 1.2 } }, true); }, 0); }}>
+              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); setTimeout(() => { if (chartInstance.current) chartInstance.current.setOption({ geo: { center: [104, 36], zoom: 1.2 } }, true); }, 50); }}>
                 ← 返回全国
               </button>
             )}
@@ -715,7 +716,7 @@ const MapView = () => {
                     setSelectedRegion(
                       Object.keys(REGION_GROUPS).find(g => REGION_GROUPS[g].includes(region)) || region
                     );
-                    flyToProvince(region);
+                    flyToProvinceRef.current(region);
                   }}
                 >
                   <span className={`map-rank-num ${idx < 3 ? 'top' : ''}`}>{idx + 1}</span>
