@@ -107,12 +107,15 @@ const MapView = () => {
   const [selectedLevel, setSelectedLevel] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedFeature, setSelectedFeature] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [cardPos, setCardPos] = useState({ x: 0, y: 0 });
   const [currentProvince, setCurrentProvince] = useState('');
+  const [loading, setLoading] = useState(false);
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const chinaJsonRef = useRef(null);
+  const clickTimerRef = useRef(null);
   const screens = useBreakpoint();
 
   const { categories, universities } = universityData;
@@ -126,10 +129,16 @@ const MapView = () => {
         u.name?.toLowerCase().includes(s) ||
         u.englishName?.toLowerCase().includes(s) ||
         u.region?.toLowerCase().includes(s) ||
+        u.location?.toLowerCase().includes(s) ||
         u.features?.toLowerCase().includes(s)
       );
     }
-    if (selectedRegion) {
+    if (currentProvince) {
+      result = result.filter(u => u.region === currentProvince);
+      if (selectedCity) {
+        result = result.filter(u => u.location === selectedCity);
+      }
+    } else if (selectedRegion) {
       const provinces = REGION_GROUPS[selectedRegion] || [selectedRegion];
       result = result.filter(u => provinces.includes(u.region));
     }
@@ -143,7 +152,7 @@ const MapView = () => {
       result = result.filter(u => u.features?.includes(selectedFeature));
     }
     return result;
-  }, [universities, searchText, selectedRegion, selectedLevel, selectedCategory, selectedFeature]);
+  }, [universities, searchText, selectedRegion, selectedLevel, selectedCategory, selectedFeature, currentProvince, selectedCity]);
 
   const provinceData = useMemo(() => {
     const map = {};
@@ -172,6 +181,31 @@ const MapView = () => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8);
   }, [filteredData]);
+
+  const provinceCities = useMemo(() => {
+    if (!currentProvince) return [];
+    const cityMap = {};
+    universities
+      .filter(u => u.region === currentProvince && u.location)
+      .forEach(u => {
+        const city = u.location;
+        if (!cityMap[city]) {
+          cityMap[city] = { name: city, count: 0, hasCoord: false };
+        }
+        cityMap[city].count++;
+        if (u.lng && u.lat) cityMap[city].hasCoord = true;
+      });
+    return Object.values(cityMap).sort((a, b) => b.count - a.count);
+  }, [universities, currentProvince]);
+
+  const provinceSchools = useMemo(() => {
+    if (!currentProvince) return [];
+    let result = universities.filter(u => u.region === currentProvince);
+    if (selectedCity) {
+      result = result.filter(u => u.location === selectedCity);
+    }
+    return result;
+  }, [universities, currentProvince, selectedCity]);
 
   const hotSchools = useMemo(() => {
     const hot = [
@@ -215,13 +249,19 @@ const MapView = () => {
 
   const flyToProvinceRef = useRef(null);
   flyToProvinceRef.current = (provinceName) => {
+    if (clickTimerRef.current) return;
+    clickTimerRef.current = setTimeout(() => { clickTimerRef.current = null; }, 300);
     const center = PROVINCE_CENTER[provinceName];
     if (!center) return;
     const zoom = PROVINCE_ZOOM[provinceName] || 5;
-    setCurrentProvince(provinceName);
+    setLoading(true);
+    setSelectedCity('');
     setSelectedSchool(null);
+    setSelectedRegion('');
+    setCurrentProvince(provinceName);
     pendingGeoRef.current = { center, zoom };
     flushGeo();
+    setTimeout(() => setLoading(false), 200);
   };
 
   useEffect(() => {
@@ -447,8 +487,10 @@ const MapView = () => {
     setSelectedLevel('');
     setSelectedCategory('');
     setSelectedFeature('');
+    setSelectedCity('');
     setSelectedSchool(null);
     setCurrentProvince('');
+    setLoading(false);
     pendingGeoRef.current = { center: [104, 36], zoom: 1.2 };
     flushGeo();
   };
@@ -495,7 +537,7 @@ const MapView = () => {
           </div>
           <div className="map-nav-actions">
             {currentProvince && (
-              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); pendingGeoRef.current = { center: [104, 36], zoom: 1.2 }; flushGeo(); }}>
+              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedCity(''); setSelectedSchool(null); pendingGeoRef.current = { center: [104, 36], zoom: 1.2 }; flushGeo(); }}>
                 ← 返回全国
               </button>
             )}
@@ -512,8 +554,20 @@ const MapView = () => {
           <EnvironmentOutlined style={{ color: '#3b82f6' }} />
           <span className="map-province-name">{currentProvince}</span>
           <span className="map-province-count">
-            {provinceData.find(d => d.name === currentProvince)?.value || 0} 所高校
+            {provinceSchools.length} 所高校
           </span>
+          <span className="map-province-cities">
+            {provinceCities.length} 个地区
+          </span>
+          {selectedCity && (
+            <span className="map-province-city-tag">
+              {selectedCity}
+              <CloseOutlined
+                style={{ marginLeft: 4, fontSize: 10, cursor: 'pointer' }}
+                onClick={() => setSelectedCity('')}
+              />
+            </span>
+          )}
         </div>
       )}
 
@@ -595,47 +649,108 @@ const MapView = () => {
             )}
           </div>
 
-          <div className="map-panel-card">
-            <div className="map-panel-title">
-              <BarChartOutlined /> 数据统计
-            </div>
-            <div className="map-stats-grid">
-              <div className="map-stat-item">
-                <div className="map-stat-value" style={{ color: '#3b82f6' }}>{stats.total.toLocaleString()}</div>
-                <div className="map-stat-label">高校总数</div>
+          {currentProvince && provinceCities.length > 0 && (
+            <div className="map-panel-card map-city-card">
+              <div className="map-panel-title">
+                <EnvironmentOutlined /> {currentProvince} · 地区列表
               </div>
-              <div className="map-stat-item">
-                <div className="map-stat-value" style={{ color: '#ef4444' }}>{stats.count985}</div>
-                <div className="map-stat-label">985</div>
-              </div>
-              <div className="map-stat-item">
-                <div className="map-stat-value" style={{ color: '#f97316' }}>{stats.count211}</div>
-                <div className="map-stat-label">211</div>
-              </div>
-              <div className="map-stat-item">
-                <div className="map-stat-value" style={{ color: '#8b5cf6' }}>{stats.countDouble}</div>
-                <div className="map-stat-label">双一流</div>
-              </div>
-            </div>
-
-            <div className="map-legend">
-              <div className="map-legend-title">学校特色图例</div>
-              {Object.entries(LEVEL_COLORS).filter(([k]) => k !== 'default').map(([key, color]) => (
-                <div key={key} className="map-legend-item">
-                  <span className="map-legend-dot" style={{ background: color }} />
-                  <span>{key}</span>
+              <div className="map-city-list">
+                <div
+                  className={`map-city-item ${!selectedCity ? 'active' : ''}`}
+                  onClick={() => setSelectedCity('')}
+                >
+                  <span className="map-city-name">全部地区</span>
+                  <span className="map-city-count">{provinceSchools.length}</span>
                 </div>
-              ))}
-              <div className="map-legend-item">
-                <span className="map-legend-dot" style={{ background: LEVEL_COLORS.default }} />
-                <span>普通高校</span>
+                {provinceCities.map(city => (
+                  <div
+                    key={city.name}
+                    className={`map-city-item ${selectedCity === city.name ? 'active' : ''}`}
+                    onClick={() => setSelectedCity(city.name === selectedCity ? '' : city.name)}
+                  >
+                    <span className="map-city-name">{city.name}</span>
+                    <span className="map-city-count">{city.count}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
+
+          {currentProvince && (
+            <div className="map-panel-card">
+              <div className="map-panel-title">
+                <BarChartOutlined /> 数据统计
+              </div>
+              <div className="map-stats-grid">
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#3b82f6' }}>{provinceSchools.length}</div>
+                  <div className="map-stat-label">高校总数</div>
+                </div>
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#ef4444' }}>{provinceSchools.filter(u => u.features?.includes('985')).length}</div>
+                  <div className="map-stat-label">985</div>
+                </div>
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#f97316' }}>{provinceSchools.filter(u => u.features?.includes('211')).length}</div>
+                  <div className="map-stat-label">211</div>
+                </div>
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#8b5cf6' }}>{provinceSchools.filter(u => u.features?.includes('双一流')).length}</div>
+                  <div className="map-stat-label">双一流</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!currentProvince && (
+            <div className="map-panel-card">
+              <div className="map-panel-title">
+                <BarChartOutlined /> 数据统计
+              </div>
+              <div className="map-stats-grid">
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#3b82f6' }}>{stats.total.toLocaleString()}</div>
+                  <div className="map-stat-label">高校总数</div>
+                </div>
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#ef4444' }}>{stats.count985}</div>
+                  <div className="map-stat-label">985</div>
+                </div>
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#f97316' }}>{stats.count211}</div>
+                  <div className="map-stat-label">211</div>
+                </div>
+                <div className="map-stat-item">
+                  <div className="map-stat-value" style={{ color: '#8b5cf6' }}>{stats.countDouble}</div>
+                  <div className="map-stat-label">双一流</div>
+                </div>
+              </div>
+
+              <div className="map-legend">
+                <div className="map-legend-title">学校特色图例</div>
+                {Object.entries(LEVEL_COLORS).filter(([k]) => k !== 'default').map(([key, color]) => (
+                  <div key={key} className="map-legend-item">
+                    <span className="map-legend-dot" style={{ background: color }} />
+                    <span>{key}</span>
+                  </div>
+                ))}
+                <div className="map-legend-item">
+                  <span className="map-legend-dot" style={{ background: LEVEL_COLORS.default }} />
+                  <span>普通高校</span>
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
 
         <main className="map-main">
           <div className="map-chart-container" ref={chartRef} />
+          {loading && (
+            <div className="map-loading-overlay">
+              <div className="map-loading-spinner" />
+              <div className="map-loading-text">加载中...</div>
+            </div>
+          )}
 
           {selectedSchool && (
             <div
@@ -678,7 +793,7 @@ const MapView = () => {
               <div className="map-card-info">
                 <div className="map-card-info-row">
                   <EnvironmentOutlined />
-                  <span>{selectedSchool.region || selectedSchool.location || '-'}</span>
+                  <span>{selectedSchool.location ? `${selectedSchool.location}` : ''}{selectedSchool.region ? ` · ${selectedSchool.region}` : ''}</span>
                 </div>
                 <div className="map-card-info-row">
                   <BankOutlined />
