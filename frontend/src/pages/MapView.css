@@ -157,6 +157,8 @@
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-height: 0;
+  height: calc(100vh - 52px);
 }
 
 /* ─── Panels ─── */
@@ -590,12 +592,10 @@
 @media (min-width: 1920px) {
   .map-panel-left,
   .map-panel-right {
-    width: 300px;
+    width: 320px;
   }
 
   .map-nav-inner {
-    max-width: 1920px;
-    margin: 0 auto;
     padding: 0 32px;
   }
 
@@ -605,7 +605,11 @@
   }
 
   .map-nav-title {
-    font-size: 16px;
+    font-size: 17px;
+  }
+
+  .map-nav-search {
+    max-width: 500px;
   }
 
   .map-stat-value {
@@ -614,6 +618,18 @@
 
   .map-card-name {
     font-size: 18px;
+  }
+
+  .map-panel-card {
+    padding: 20px;
+  }
+
+  .map-rank-item {
+    padding: 9px 10px;
+  }
+
+  .map-hot-item {
+    padding: 10px;
   }
 }
 

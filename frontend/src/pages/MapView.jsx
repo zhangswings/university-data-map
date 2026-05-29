@@ -189,37 +189,39 @@ const MapView = () => {
       .slice(0, 8);
   }, [universities, selectedRegion]);
 
-  const flyToSchool = useCallback((school) => {
-    if (!chartInstance.current || !school.lng) return;
-    setTimeout(() => {
-      if (chartInstance.current) {
+  const pendingGeoRef = useRef(null);
+  const geoTimerRef = useRef(null);
+
+  const flushGeo = () => {
+    if (geoTimerRef.current) clearTimeout(geoTimerRef.current);
+    geoTimerRef.current = setTimeout(() => {
+      if (chartInstance.current && pendingGeoRef.current) {
+        const { center, zoom } = pendingGeoRef.current;
+        pendingGeoRef.current = null;
         chartInstance.current.setOption({
-          geo: {
-            center: [school.lng, school.lat],
-            zoom: 6,
-          },
+          geo: { center, zoom },
         }, true);
       }
-    }, 50);
+    }, 100);
+  };
+
+  const flyToSchool = useCallback((school) => {
+    if (!school.lng) return;
     setSelectedSchool(school);
     setCurrentProvince('');
+    pendingGeoRef.current = { center: [school.lng, school.lat], zoom: 6 };
+    flushGeo();
   }, []);
 
   const flyToProvinceRef = useRef(null);
   flyToProvinceRef.current = (provinceName) => {
-    if (!chartInstance.current) return;
     const center = PROVINCE_CENTER[provinceName];
     if (!center) return;
     const zoom = PROVINCE_ZOOM[provinceName] || 5;
     setCurrentProvince(provinceName);
     setSelectedSchool(null);
-    setTimeout(() => {
-      if (chartInstance.current) {
-        chartInstance.current.setOption({
-          geo: { center, zoom },
-        }, true);
-      }
-    }, 50);
+    pendingGeoRef.current = { center, zoom };
+    flushGeo();
   };
 
   useEffect(() => {
@@ -447,13 +449,8 @@ const MapView = () => {
     setSelectedFeature('');
     setSelectedSchool(null);
     setCurrentProvince('');
-    setTimeout(() => {
-      if (chartInstance.current) {
-        chartInstance.current.setOption({
-          geo: { center: [104, 36], zoom: 1.2 },
-        }, true);
-      }
-    }, 50);
+    pendingGeoRef.current = { center: [104, 36], zoom: 1.2 };
+    flushGeo();
   };
 
   const clearAll = () => {
@@ -498,7 +495,7 @@ const MapView = () => {
           </div>
           <div className="map-nav-actions">
             {currentProvince && (
-              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); setTimeout(() => { if (chartInstance.current) chartInstance.current.setOption({ geo: { center: [104, 36], zoom: 1.2 } }, true); }, 50); }}>
+              <button className="map-nav-back" onClick={() => { setCurrentProvince(''); setSelectedSchool(null); pendingGeoRef.current = { center: [104, 36], zoom: 1.2 }; flushGeo(); }}>
                 ← 返回全国
               </button>
             )}
